@@ -325,12 +325,6 @@ releases publicadas com tags no formato `v1.2.3` (o prefixo `v` é opcional).
 > A verificação não instala a atualização sozinha: ela abre a release/APK no navegador. Para
 > atualizações OTA de JavaScript, seria necessário configurar `expo-updates`/EAS Update.
 
----
-
-## 10. Equipe e Créditos
-
-- Luiz Henrique de Toledo — RA 24214219
-- Luiz Eduardo Rodrigues Firmino — RA 24221183
 
 ---
 

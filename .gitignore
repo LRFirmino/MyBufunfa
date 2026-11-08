@@ -47,6 +47,7 @@ yarn-error.log*
 
 #arquivos
 *.docx
+*.docx#
 *.xlsx
 *.pptx
 .~lock.*#
