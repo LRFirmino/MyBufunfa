@@ -5,7 +5,7 @@
  * `GITHUB_OWNER`/`GITHUB_REPO` abaixo ou defina a variável de ambiente
  * `EXPO_PUBLIC_GITHUB_REPO` no formato `owner/repositorio`.
  */
-export const APP_NAME = 'Controle de Gastos';
+export const APP_NAME = 'My Bufunfa';
 
 const repositoryFromEnv = process.env.EXPO_PUBLIC_GITHUB_REPO;
 
