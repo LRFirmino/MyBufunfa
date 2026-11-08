@@ -31,31 +31,30 @@ jobs:
       - name: Instalar dependências
         run: npm ci
 
-      - name: Validar tag e versão do app
+      - name: Sincronizar versão com a tag
         run: |
-          TAG_VERSION="${GITHUB_REF_NAME#v}"
-          TAG_BASE="${TAG_VERSION%%-*}"
-          APP_VERSION="$(node -p "require('./app.json').expo.version")"
-          APP_BASE="${APP_VERSION%%-*}"
-          PKG_VERSION="$(node -p "require('./package.json').version")"
-          PKG_BASE="${PKG_VERSION%%-*}"
+          node <<'NODE'
+          const fs = require('node:fs');
 
-          echo "Tag: ${GITHUB_REF_NAME} (versão base: ${TAG_BASE})"
-          echo "app.json: ${APP_VERSION}"
-          echo "package.json: ${PKG_VERSION}"
+          const tag = process.env.GITHUB_REF_NAME.replace(/^v/i, '');
+          const base = tag.split('-')[0];
 
-          if [ "${TAG_BASE}" != "${APP_BASE}" ]; then
-            echo "::error::A tag ${GITHUB_REF_NAME} (versão base ${TAG_BASE}) não corresponde à versão ${APP_VERSION} em app.json. Atualize app.json e refaça a tag."
-            exit 1
-          fi
+          if (!/^\d+\.\d+\.\d+$/.test(base)) {
+            console.error(
+              `Tag inválida: ${process.env.GITHUB_REF_NAME}. Use o formato v1.2.3 ou v1.2.3-beta.1.`,
+            );
+            process.exit(1);
+          }
 
-          if [ "${TAG_VERSION}" != "${APP_VERSION}" ]; then
-            echo "::warning::app.json está em ${APP_VERSION}, mas a tag é ${GITHUB_REF_NAME}. Isso é esperado em pré-releases."
-          fi
+          const appJson = JSON.parse(fs.readFileSync('app.json', 'utf8'));
+          appJson.expo.version = base;
+          fs.writeFileSync('app.json', `${JSON.stringify(appJson, null, 2)}\n`);
 
-          if [ "${TAG_BASE}" != "${PKG_BASE}" ]; then
-            echo "::warning::package.json está na versão ${PKG_VERSION}, diferente da versão base da tag (${TAG_BASE})."
-          fi
+          console.log(`Tag: ${process.env.GITHUB_REF_NAME}`);
+          console.log(`Versão do app definida para: ${base}`);
+          NODE
+
+          echo "::notice::Versão do app definida pela tag ${GITHUB_REF_NAME}."
 
       - name: Verificar TypeScript
         run: npm run typecheck

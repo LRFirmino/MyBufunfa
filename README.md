@@ -340,7 +340,7 @@ arquivo usado pelo "Verificar atualizações".
 Fluxo resumido:
 
 ```bash
-# 1. atualize a versão em app.json (e package.json)
+# 1. (opcional) atualize a versão em app.json (e package.json)
 # 2. commit e push
 git commit -am "chore: release v1.1.0"
 git push origin main
@@ -350,8 +350,9 @@ git tag -a v1.1.0 -m "Release v1.1.0"
 git push origin v1.1.0
 ```
 
-O workflow valida se a tag corresponde ao `app.json`, roda o typecheck, gera o APK e cria a
-release. Tags com hífen (ex.: `v1.2.0-beta.1`) são publicadas como pré-release.
+O workflow **sincroniza a versão do `app.json` com a tag** automaticamente antes do build,
+roda o typecheck, gera o APK e cria a release. Tags com hífen (ex.: `v1.2.0-beta.1`) são
+publicadas como pré-release.
 
 A configuração inicial (secret `EXPO_TOKEN` e permissões do Actions) e o passo a passo
 completo estão em **[RELEASING.md](./RELEASING.md)**.

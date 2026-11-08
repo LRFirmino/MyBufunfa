@@ -68,11 +68,13 @@ npx eas-cli@latest init
 
 Sempre faça o lançamento a partir da branch principal (`main`), com o código já testado.
 
-### Passo 1 — Atualize a versão
+### Passo 1 — Defina a versão (opcional)
 
-A versão da tag **precisa ser igual** à versão em `app.json` (em pré-releases, vale a
-versão base, antes do hífen). O workflow valida isso e falha se estiver diferente.
+A versão do build é definida pela **tag**: antes de compilar, o workflow atualiza o
+`app.json` no runner com a versão da tag. Portanto, **não é obrigatório** editar o
+`app.json` a cada release.
 
+Ainda assim, é recomendado commitar a versão para o repositório ficar coerente com a tag.
 Edite [`app.json`](app.json):
 
 ```json
@@ -83,8 +85,13 @@ Edite [`app.json`](app.json):
 }
 ```
 
-Recomendado: atualize também [`package.json`](package.json) para manter os dois iguais
-(o workflow apenas avisa se estiverem diferentes).
+Se quiser, atualize também [`package.json`](package.json) — o workflow não usa esse valor,
+mas ajuda a manter os dois iguais.
+
+> ⚠️ O workflow altera o `app.json` apenas no runner, não no seu commit. O EAS inclui
+> alterações não commitadas por padrão (`cli.requireCommit` não está definido no
+> `eas.json`). Se você ativar `requireCommit: true`, commite a versão antes de criar a tag,
+> porque o build passará a usar apenas o commit.
 
 Use **SemVer** (`MAIOR.MENOR.CORREÇÃO`):
 
@@ -137,7 +144,7 @@ git push origin main --follow-tags
 1. Abra o repositório no GitHub.
 2. Vá em **Actions → Release**.
 3. O job **Compilar APK e publicar release** vai:
-   - validar a tag contra o `app.json`;
+   - sincronizar a versão do `app.json` com a tag;
    - rodar `npm ci` e `npm run typecheck`;
    - compilar o APK no EAS (`profile: preview`);
    - baixar o APK;
@@ -167,8 +174,8 @@ git tag -a v1.2.0-beta.1 -m "Beta 1.2.0"
 git push origin v1.2.0-beta.1
 ```
 
-Nesse caso, o `app.json` deve estar na **versão base** (`1.2.0`), sem o sufixo `-beta.1`.
-O workflow compara apenas a parte antes do hífen.
+Nesse caso, o workflow define a **versão base** (`1.2.0`) no `app.json`, sem o sufixo
+`-beta.1`. Não é preciso editar manualmente.
 
 Isso é útil para testar o workflow sem afetar quem usa a versão estável.
 
@@ -200,15 +207,16 @@ execução do Actions. Se o código precisar mudar, recrie a tag como acima.
 Se a release já tiver sido criada e você só quer reenviar o APK, o workflow já trata isso:
 em uma nova execução ele usa `gh release upload --clobber` para substituir o arquivo.
 
-### A tag não corresponde ao `app.json`
+### A tag tem formato inválido
 
-Mensagem esperada:
+O workflow aceita tags no formato `v1.2.3` ou `v1.2.3-beta.1`. Se a parte numérica não
+estiver no formato `X.Y.Z`, o build falha com:
 
 ```text
-A tag v1.1.0 (versão base 1.1.0) não corresponde à versão 1.0.0 em app.json.
+Tag inválida: v1.2. Use o formato v1.2.3 ou v1.2.3-beta.1.
 ```
 
-Atualize `app.json` para `1.1.0`, faça commit e recrie a tag.
+Crie a tag no formato correto.
 
 ---
 
