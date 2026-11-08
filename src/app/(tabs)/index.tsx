@@ -49,8 +49,8 @@ export default function DashboardScreen() {
     <View style={styles.header}>
       <View style={styles.topBar}>
         <View style={styles.greeting}>
-          <AppText variant="caption">Olá 👋</AppText>
-          <AppText variant="title">Meu dinheiro</AppText>
+          <AppText variant="caption">Bem vindo👋</AppText>
+          <AppText variant="title">My Bufunfa</AppText>
         </View>
         <IconButton
           icon="settings-outline"
