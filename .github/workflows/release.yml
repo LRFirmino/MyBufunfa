@@ -60,6 +60,18 @@ jobs:
       - name: Verificar TypeScript
         run: npm run typecheck
 
+      - name: Verificar EXPO_TOKEN
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: |
+          if [ -z "${EXPO_TOKEN}" ]; then
+            echo "::error::O secret EXPO_TOKEN não está configurado ou está vazio neste repositório."
+            echo "Adicione em Settings → Secrets and variables → Actions → Repository secrets."
+            echo "Se você criou em 'Environments', mova para 'Repository secrets' ou declare o environment no job."
+            exit 1
+          fi
+          echo "EXPO_TOKEN presente (${#EXPO_TOKEN} caracteres)."
+
       - name: Configurar EAS CLI
         uses: expo/expo-github-action@v8
         with:

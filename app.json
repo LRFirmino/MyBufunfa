@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Controle de Gastos",
+    "name": "My Bufunfa",
     "slug": "mybufunfa",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -14,7 +14,7 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.mybufunfa.app",
       "infoPlist": {
-        "CFBundleDisplayName": "Controle de Gastos"
+        "CFBundleDisplayName": "My Bufunfa"
       }
     },
     "android": {
