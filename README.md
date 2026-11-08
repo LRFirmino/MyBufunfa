@@ -213,11 +213,15 @@ controle-de-gastos-familiar/
 │   └── utils/
 │       ├── backup.ts           # Serialização/validação de JSON e CSV
 │       └── format.ts           # Formatação de moeda, datas e agrupamentos
+├── .github/
+│   └── workflows/
+│       └── release.yml         # CI: tag → build do APK + release no GitHub
 ├── app.json                    # Configuração do Expo (nome, ícones, splash)
 ├── metro.config.js             # Config do Metro (suporte a WASM + headers web)
 ├── patches/                    # Correções aplicadas a dependências (patch-package)
 ├── package.json                # Dependências e scripts
 ├── tsconfig.json               # Configuração do TypeScript (alias @/*)
+├── RELEASING.md                # Passo a passo para lançar novas versões
 └── README.md                   # Este arquivo
 ```
 
@@ -325,6 +329,32 @@ releases publicadas com tags no formato `v1.2.3` (o prefixo `v` é opcional).
 > A verificação não instala a atualização sozinha: ela abre a release/APK no navegador. Para
 > atualizações OTA de JavaScript, seria necessário configurar `expo-updates`/EAS Update.
 
+---
+
+## 10. Releases automatizados
+
+O projeto tem um workflow de **GitHub Actions** que, ao receber uma tag `v*`, compila o APK
+Android no **EAS Build** e publica uma **release no GitHub** com o APK anexado — o mesmo
+arquivo usado pelo "Verificar atualizações".
+
+Fluxo resumido:
+
+```bash
+# 1. atualize a versão em app.json (e package.json)
+# 2. commit e push
+git commit -am "chore: release v1.1.0"
+git push origin main
+
+# 3. crie e envie a tag
+git tag -a v1.1.0 -m "Release v1.1.0"
+git push origin v1.1.0
+```
+
+O workflow valida se a tag corresponde ao `app.json`, roda o typecheck, gera o APK e cria a
+release. Tags com hífen (ex.: `v1.2.0-beta.1`) são publicadas como pré-release.
+
+A configuração inicial (secret `EXPO_TOKEN` e permissões do Actions) e o passo a passo
+completo estão em **[RELEASING.md](./RELEASING.md)**.
 
 ---
 

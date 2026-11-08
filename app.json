@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Controle de Gastos",
-    "slug": "controle-de-gastos-familiar",
+    "slug": "mybufunfa",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -65,8 +65,9 @@
         }
       },
       "eas": {
-        "projectId": "342115b6-73bc-48e9-8b61-c3ea22729e31"
+        "projectId": "ac51a5fa-2445-4fd0-b928-d24c9b433058"
       }
-    }
+    },
+    "owner": "edowohlks-team"
   }
 }
