@@ -1,0 +1,139 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Compilar APK e publicar release
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Instalar dependências
+        run: npm ci
+
+      - name: Validar tag e versão do app
+        run: |
+          TAG_VERSION="${GITHUB_REF_NAME#v}"
+          TAG_BASE="${TAG_VERSION%%-*}"
+          APP_VERSION="$(node -p "require('./app.json').expo.version")"
+          APP_BASE="${APP_VERSION%%-*}"
+          PKG_VERSION="$(node -p "require('./package.json').version")"
+          PKG_BASE="${PKG_VERSION%%-*}"
+
+          echo "Tag: ${GITHUB_REF_NAME} (versão base: ${TAG_BASE})"
+          echo "app.json: ${APP_VERSION}"
+          echo "package.json: ${PKG_VERSION}"
+
+          if [ "${TAG_BASE}" != "${APP_BASE}" ]; then
+            echo "::error::A tag ${GITHUB_REF_NAME} (versão base ${TAG_BASE}) não corresponde à versão ${APP_VERSION} em app.json. Atualize app.json e refaça a tag."
+            exit 1
+          fi
+
+          if [ "${TAG_VERSION}" != "${APP_VERSION}" ]; then
+            echo "::warning::app.json está em ${APP_VERSION}, mas a tag é ${GITHUB_REF_NAME}. Isso é esperado em pré-releases."
+          fi
+
+          if [ "${TAG_BASE}" != "${PKG_BASE}" ]; then
+            echo "::warning::package.json está na versão ${PKG_VERSION}, diferente da versão base da tag (${TAG_BASE})."
+          fi
+
+      - name: Verificar TypeScript
+        run: npm run typecheck
+
+      - name: Configurar EAS CLI
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Compilar APK no EAS
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: |
+          eas build \
+            --platform android \
+            --profile preview \
+            --non-interactive \
+            --wait \
+            --json > eas-build.json
+
+      - name: Obter URL do APK
+        id: apk
+        run: |
+          node <<'NODE'
+          const fs = require('node:fs');
+
+          const raw = fs.readFileSync('eas-build.json', 'utf8');
+          const parsed = JSON.parse(raw);
+          const build = Array.isArray(parsed) ? parsed[0] : parsed;
+          const url = build?.artifacts?.buildUrl;
+
+          if (!url) {
+            console.error('O build terminou sem um artifact de APK.');
+            console.error(JSON.stringify(build, null, 2));
+            process.exit(1);
+          }
+
+          fs.appendFileSync(process.env.GITHUB_OUTPUT, `apk_url=${url}\n`);
+          console.log(`APK disponível em: ${url}`);
+          NODE
+
+      - name: Baixar APK
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: |
+          curl --fail --location --retry 3 --retry-delay 5 \
+            --header "Authorization: Bearer ${EXPO_TOKEN}" \
+            --output "mybufunfa-${GITHUB_REF_NAME}.apk" \
+            "${{ steps.apk.outputs.apk_url }}"
+
+      - name: Publicar release no GitHub
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          APK="mybufunfa-${TAG}.apk"
+          PRERELEASE=""
+
+          case "${TAG}" in
+            *-*) PRERELEASE="--prerelease" ;;
+          esac
+
+          if gh release view "${TAG}" >/dev/null 2>&1; then
+            echo "Release ${TAG} já existe; enviando o APK novamente."
+            gh release upload "${TAG}" "${APK}" --clobber
+          else
+            gh release create "${TAG}" "${APK}" \
+              --title "${TAG}" \
+              --generate-notes \
+              ${PRERELEASE}
+          fi
+
+      - name: Resumo
+        run: |
+          {
+            echo "## Release ${GITHUB_REF_NAME} publicada"
+            echo ""
+            echo "- APK: \`mybufunfa-${GITHUB_REF_NAME}.apk\`"
+            echo "- Release: ${{ github.server_url }}/${{ github.repository }}/releases/tag/${GITHUB_REF_NAME}"
+          } >> "${GITHUB_STEP_SUMMARY}"
