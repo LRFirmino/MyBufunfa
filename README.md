@@ -15,11 +15,10 @@
 
 ## 1. Descrição Geral
 
-O **Controle de Gastos Familiar** foi desenvolvido como solução para o **Projeto Integrador em
-Computação II (DRP04) da UNIVESP**. O problema central identificado junto à comunidade externa é a
-dificuldade das famílias em registrar e acompanhar **pequenas despesas do cotidiano** (padaria,
-lanche, transporte, assinaturas). Individualmente esses valores parecem pequenos, mas somados
-comprometem o orçamento do mês.
+O **Controle de Gastos Familiar** é um aplicativo para **controle financeiro familiar e de
+pequenas despesas do dia a dia**. O problema central é a dificuldade das famílias em registrar e
+acompanhar **pequenas despesas do cotidiano** (padaria, lanche, transporte, assinaturas).
+Individualmente esses valores parecem pequenos, mas somados comprometem o orçamento do mês.
 
 A proposta é um aplicativo **mobile (Android e iOS)** com foco em:
 
@@ -53,6 +52,9 @@ A proposta é um aplicativo **mobile (Android e iOS)** com foco em:
 - **Histórico** com busca, filtro por tipo e navegação por mês.
 - **Ajustes** com tema (Sistema/Claro/Escuro) e informações do app.
 - **Edição e exclusão** de lançamentos e categorias.
+- **Backup e restauração** dos dados em JSON, além de exportação de planilha CSV.
+- **Limpeza dos dados locais** com confirmação em duas etapas.
+- **Verificação de atualizações** pelo GitHub Releases (abre a release ou o APK).
 
 ---
 
@@ -80,7 +82,7 @@ Antes de começar, instale em sua máquina:
 
 ```bash
 git clone <URL-DO-REPOSITORIO>
-cd projeto_univesp_controle_de_gastos
+cd controle-de-gastos-familiar
 ```
 
 **Ou, se recebeu um arquivo `.zip`:** extraia a pasta e abra o terminal dentro dela.
@@ -168,7 +170,7 @@ eas build --platform android --profile preview
 ## 5. Estrutura de Pastas
 
 ```
-projeto_univesp_controle_de_gastos/
+controle-de-gastos-familiar/
 ├── assets/                     # Ícones, splash e imagens do app
 ├── src/
 │   ├── app/                    # Rotas do Expo Router (cada arquivo = uma tela)
@@ -179,7 +181,7 @@ projeto_univesp_controle_de_gastos/
 │   │   │   ├── history.tsx     # Histórico com busca e filtros
 │   │   │   ├── reports.tsx     # Relatórios e gráficos
 │   │   │   ├── categories.tsx  # Categorias e alertas de limite
-│   │   │   └── settings.tsx    # Ajustes (tema, sobre)
+│   │   │   └── settings.tsx    # Ajustes (tema, backup, limpeza, updates)
 │   │   ├── transaction.tsx     # Modal de lançamento (criar/editar)
 │   │   └── category.tsx        # Modal de categoria (criar/editar)
 │   ├── components/             # Componentes reutilizáveis
@@ -191,17 +193,25 @@ projeto_univesp_controle_de_gastos/
 │   │   ├── DateField.tsx       # Campo de data
 │   │   ├── MonthSelector.tsx   # Navegação entre meses
 │   │   └── FloatingAddButton.tsx # FAB (+)
+│   ├── config/
+│   │   └── app.ts              # Nome do app e repositório do GitHub Releases
 │   ├── context/
 │   │   ├── FinanceContext.tsx  # Estado global de finanças + CRUD
 │   │   └── ThemeContext.tsx    # Tema Light/Dark persistido
 │   ├── db/
 │   │   ├── schema.ts           # Script SQL de criação das tabelas + seed
-│   │   └── index.ts            # Repositório (consultas e operações SQLite)
+│   │   ├── index.ts            # Repositório (consultas e operações SQLite)
+│   │   └── backup.ts           # Exportar, importar e limpar dados
+│   ├── services/
+│   │   ├── dataTransfer.ts     # Compartilhar/abrir arquivos JSON e CSV
+│   │   └── updates.ts          # Consulta de releases no GitHub
 │   ├── theme/
 │   │   └── index.ts            # Cores, espaçamentos e raios (design tokens)
 │   ├── types/
-│   │   └── models.ts           # Tipagens (Transaction, Category, etc.)
+│   │   ├── models.ts           # Tipagens (Transaction, Category, etc.)
+│   │   └── backup.ts           # Tipos do backup JSON/CSV
 │   └── utils/
+│       ├── backup.ts           # Serialização/validação de JSON e CSV
 │       └── format.ts           # Formatação de moeda, datas e agrupamentos
 ├── app.json                    # Configuração do Expo (nome, ícones, splash)
 ├── metro.config.js             # Config do Metro (suporte a WASM + headers web)
@@ -274,6 +284,8 @@ Na primeira execução, são inseridas categorias padrão com ícones, cores e l
 | `Unable to resolve module` | Apague `node_modules` e rode `npm install` novamente. |
 | Erros de versão de pacotes Expo | Rode `npx expo install --fix`. |
 | Erros de TypeScript | Rode `npm run typecheck` para listar os pontos. |
+| Backup não importa | Use um JSON exportado pelo próprio app ou um CSV com as colunas `Data`, `Valor` e `Tipo`. |
+| Verificar atualizações falha | Confira o repositório em `src/config/app.ts` (ou `EXPO_PUBLIC_GITHUB_REPO`) e se existe uma release publicada. |
 | Web: `Worker chunk not found` / `SharedArrayBuffer is not defined` | Confirme que o `metro.config.js` está presente (adiciona `wasm` em `assetExts`) e que o servidor envia os cabeçalhos `Cross-Origin-Embedder-Policy: credentialless` e `Cross-Origin-Opener-Policy: same-origin`. |
 
 > 🩹 **Correção aplicada a dependência (patch):** o pacote `@expo/metro-config@57.0.12` tem um bug
@@ -287,14 +299,38 @@ Na primeira execução, são inseridas categorias padrão com ícones, cores e l
 
 ---
 
-## 9. Equipe e Créditos
+## 9. Backup, importação e atualizações
 
-**Projeto Integrador em Computação II — DRP04 — Turma 006 (UNIVESP)**
+### Backup e restauração
+
+- **Exportar backup (JSON)** — gera um arquivo com versão, categorias, lançamentos e preferências.
+  É o formato recomendado para trocar de celular ou restaurar tudo.
+- **Exportar planilha (CSV)** — gera um CSV (separador `;`, decimal com vírgula e BOM UTF-8) para
+  abrir no Excel/Google Sheets. Contém apenas os lançamentos.
+- **Importar dados** — aceita JSON (substitui categorias, lançamentos e preferências) ou CSV
+  (substitui apenas os lançamentos e cria categorias pelo nome). Sempre pede confirmação.
+- **Apagar todos os dados** — remove lançamentos e categorias, recria as categorias padrão e mantém
+  o tema. Pede confirmação em duas etapas.
+
+### Verificação de atualizações
+
+O app consulta a API pública do **GitHub Releases**, compara a tag da release mais recente com a
+versão instalada e, se houver uma versão nova, oferece abrir a página da release. No Android, se
+houver um arquivo `.apk` anexado, também oferece baixar o APK.
+
+Configure o repositório em `src/config/app.ts` ou defina a variável de ambiente
+`EXPO_PUBLIC_GITHUB_REPO=owner/repositorio`. Para o check funcionar, o repositório precisa ter
+releases publicadas com tags no formato `v1.2.3` (o prefixo `v` é opcional).
+
+> A verificação não instala a atualização sozinha: ela abre a release/APK no navegador. Para
+> atualizações OTA de JavaScript, seria necessário configurar `expo-updates`/EAS Update.
+
+---
+
+## 10. Equipe e Créditos
 
 - Luiz Henrique de Toledo — RA 24214219
 - Luiz Eduardo Rodrigues Firmino — RA 24221183
-
-Orientador do PI: **Kelvin dos Santos Alves**
 
 ---
 

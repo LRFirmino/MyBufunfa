@@ -10,7 +10,7 @@ import {
   StyleSheet,
   View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppText } from '@/components/ui/AppText';
 import { Button } from '@/components/ui/Button';
@@ -45,6 +45,7 @@ const ICON_OPTIONS: (keyof typeof Ionicons.glyphMap)[] = [
 export default function CategoryFormScreen() {
   const { colors } = useTheme();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ id?: string }>();
   const { categories, addCategory, editCategory, removeCategory } = useFinance();
 
@@ -133,12 +134,18 @@ export default function CategoryFormScreen() {
         </View>
 
         <ScrollView
+          style={styles.flex}
           contentContainerStyle={styles.content}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}>
           <View style={styles.preview}>
-            <CategoryIcon icon={icon} color={color} size={76} />
-            <AppText variant="subtitle">{name || 'Nome da categoria'}</AppText>
+            <CategoryIcon icon={icon} color={color} size={56} />
+            <View style={styles.previewText}>
+              <AppText variant="subtitle" numberOfLines={1}>
+                {name || 'Nome da categoria'}
+              </AppText>
+              <AppText variant="caption">Prévia da categoria</AppText>
+            </View>
           </View>
 
           <TextField
@@ -162,10 +169,18 @@ export default function CategoryFormScreen() {
           />
 
           <View style={styles.field}>
-            <AppText variant="caption" style={styles.fieldLabel}>
-              Ícone
-            </AppText>
-            <View style={styles.iconGrid}>
+            <View style={styles.fieldHeader}>
+              <AppText variant="caption" style={styles.fieldLabel}>
+                Ícone
+              </AppText>
+              <AppText variant="caption" color={colors.textMuted}>
+                Deslize →
+              </AppText>
+            </View>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.iconRow}>
               {ICON_OPTIONS.map((option) => {
                 const selected = icon === option;
                 return (
@@ -181,18 +196,26 @@ export default function CategoryFormScreen() {
                         borderColor: selected ? color : 'transparent',
                       },
                     ]}>
-                    <Ionicons name={option} size={22} color={selected ? color : colors.textMuted} />
+                    <Ionicons name={option} size={20} color={selected ? color : colors.textMuted} />
                   </Pressable>
                 );
               })}
-            </View>
+            </ScrollView>
           </View>
 
           <View style={styles.field}>
-            <AppText variant="caption" style={styles.fieldLabel}>
-              Cor
-            </AppText>
-            <View style={styles.colorGrid}>
+            <View style={styles.fieldHeader}>
+              <AppText variant="caption" style={styles.fieldLabel}>
+                Cor
+              </AppText>
+              <AppText variant="caption" color={colors.textMuted}>
+                Deslize →
+              </AppText>
+            </View>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.colorRow}>
               {categoryColorOptions.map((option) => (
                 <Pressable
                   key={option}
@@ -207,13 +230,23 @@ export default function CategoryFormScreen() {
                     },
                   ]}>
                   {color === option ? (
-                    <Ionicons name="checkmark" size={18} color="#FFFFFF" />
+                    <Ionicons name="checkmark" size={16} color="#FFFFFF" />
                   ) : null}
                 </Pressable>
               ))}
-            </View>
+            </ScrollView>
           </View>
+        </ScrollView>
 
+        <View
+          style={[
+            styles.footer,
+            {
+              borderTopColor: colors.border,
+              backgroundColor: colors.background,
+              paddingBottom: Math.max(insets.bottom, spacing.lg),
+            },
+          ]}>
           {error ? (
             <View style={styles.errorRow}>
               <Ionicons name="alert-circle" size={15} color={colors.danger} />
@@ -222,7 +255,6 @@ export default function CategoryFormScreen() {
               </AppText>
             </View>
           ) : null}
-
           <Button
             label={saving ? 'Salvando...' : 'Salvar categoria'}
             icon="checkmark-circle-outline"
@@ -230,7 +262,7 @@ export default function CategoryFormScreen() {
             disabled={saving}
             onPress={handleSave}
           />
-        </ScrollView>
+        </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -244,39 +276,61 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.lg,
+    paddingVertical: spacing.md,
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
   headerSpacer: { width: 26 },
-  content: { padding: spacing.lg, gap: spacing.xl, paddingBottom: spacing.xxl },
-  preview: { alignItems: 'center', gap: spacing.md, paddingVertical: spacing.md },
-  field: { gap: spacing.sm },
-  fieldLabel: { marginLeft: spacing.xs },
-  iconGrid: {
+  content: {
+    padding: spacing.lg,
+    gap: spacing.lg,
+    paddingBottom: spacing.lg,
+  },
+  preview: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
+    alignItems: 'center',
+    gap: spacing.md,
+    paddingVertical: spacing.xs,
+  },
+  previewText: { flex: 1, gap: 2 },
+  field: { gap: spacing.xs },
+  fieldHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.xs,
+  },
+  fieldLabel: { marginLeft: 0 },
+  iconRow: {
     gap: spacing.sm,
+    paddingVertical: spacing.xs,
+    paddingRight: spacing.lg,
   },
   iconOption: {
-    width: 48,
-    height: 48,
-    borderRadius: radius.md,
+    width: 42,
+    height: 42,
+    borderRadius: radius.sm,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
   },
-  colorGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+  colorRow: {
     gap: spacing.sm,
+    paddingVertical: spacing.xs,
+    paddingRight: spacing.lg,
   },
   colorOption: {
-    width: 40,
-    height: 40,
+    width: 34,
+    height: 34,
     borderRadius: radius.pill,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 2,
+  },
+  footer: {
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
+    gap: spacing.sm,
+    borderTopWidth: StyleSheet.hairlineWidth,
   },
   errorRow: {
     flexDirection: 'row',

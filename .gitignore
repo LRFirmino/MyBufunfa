@@ -46,7 +46,8 @@ yarn-error.log*
 !.vscode/extensions.json
 
 #arquivos
-Plano_de_Acao_preenchido.docx
-Plano_de_Acao.docx
-Entrevistas_Publico_Alvo_Controle_de_Gastos.docx
+*.docx
+*.xlsx
+*.pptx
+.~lock.*#
 prompt_de_desenvolvimento_do_app.md

@@ -12,13 +12,13 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.univesp.controledegastos",
+      "bundleIdentifier": "com.mybufunfa.app",
       "infoPlist": {
         "CFBundleDisplayName": "Controle de Gastos"
       }
     },
     "android": {
-      "package": "com.univesp.controledegastos",
+      "package": "com.mybufunfa.app",
       "adaptiveIcon": {
         "backgroundColor": "#0F766E",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -51,10 +51,22 @@
           "imageWidth": 120,
           "resizeMode": "contain"
         }
-      ]
+      ],
+      "expo-sharing"
     ],
     "experiments": {
       "typedRoutes": false
+    },
+    "extra": {
+      "router": {
+        "headers": {
+          "Cross-Origin-Embedder-Policy": "credentialless",
+          "Cross-Origin-Opener-Policy": "same-origin"
+        }
+      },
+      "eas": {
+        "projectId": "342115b6-73bc-48e9-8b61-c3ea22729e31"
+      }
     }
   }
 }

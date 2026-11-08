@@ -48,7 +48,7 @@ CREATE TABLE IF NOT EXISTS settings (
  * Categorias iniciais (com ícones e cores). Cada família pode editar os
  * limites mensais na tela "Categorias".
  */
-const DEFAULT_CATEGORIES: CategoryInput[] = [
+export const DEFAULT_CATEGORIES: CategoryInput[] = [
   { name: 'Alimentação', icon: 'restaurant-outline', color: '#10B981', monthly_limit: 800 },
   { name: 'Transporte', icon: 'car-outline', color: '#3B82F6', monthly_limit: 400 },
   { name: 'Lanches', icon: 'fast-food-outline', color: '#F59E0B', monthly_limit: 250 },
@@ -65,7 +65,7 @@ export async function migrateDatabase(db: SQLiteDatabase): Promise<void> {
   await seedDefaultCategories(db);
 }
 
-async function seedDefaultCategories(db: SQLiteDatabase): Promise<void> {
+export async function seedDefaultCategories(db: SQLiteDatabase): Promise<void> {
   const row = await db.getFirstAsync<{ count: number }>(
     'SELECT COUNT(*) as count FROM categories;',
   );

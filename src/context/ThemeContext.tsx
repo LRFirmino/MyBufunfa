@@ -22,6 +22,8 @@ interface ThemeContextValue {
   scheme: 'light' | 'dark';
   colors: ThemeColors;
   setPreference: (preference: ThemePreference) => void;
+  /** Relê a preferência salva no banco (útil após importar um backup). */
+  refreshPreference: () => Promise<void>;
 }
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
@@ -54,6 +56,13 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     persistSetting(THEME_KEY, next).catch(() => undefined);
   }, []);
 
+  const refreshPreference = useCallback(async () => {
+    const value = await getSetting(THEME_KEY);
+    if (value === 'light' || value === 'dark' || value === 'system') {
+      setPreferenceState(value);
+    }
+  }, []);
+
   const scheme: 'light' | 'dark' =
     preference === 'system' ? (systemScheme === 'dark' ? 'dark' : 'light') : preference;
 
@@ -63,8 +72,9 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       scheme,
       colors: scheme === 'dark' ? darkColors : lightColors,
       setPreference,
+      refreshPreference,
     }),
-    [preference, scheme, setPreference],
+    [preference, scheme, setPreference, refreshPreference],
   );
 
   // Evita "flash" de tema errado enquanto lê a preferência salva.
